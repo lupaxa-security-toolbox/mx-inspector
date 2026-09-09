@@ -13,7 +13,8 @@
 
 # lupaxa-mx-inspector
 
-Look up a domain's MX hosts and published DMARC policy from public DNS.
+Look up a domain's MX hosts and DMARC policy from public DNS, with an
+optional SMTP banner probe.
 
 > [!WARNING]
 > **Authorised use only.** `--probe` opens an SMTP session to the target

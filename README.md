@@ -6,7 +6,8 @@
 
 <h1 align="center">mx-inspector</h1>
 
-Look up a domain's MX hosts and DMARC policy from public DNS.
+Look up a domain's MX hosts and DMARC policy from public DNS, with an
+optional SMTP banner probe.
 
 > [!WARNING]
 > **Authorised use only.** `--probe` opens an SMTP session to the target

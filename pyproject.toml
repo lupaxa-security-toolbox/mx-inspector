@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "lupaxa-mx-inspector"
 dynamic = ["version"]
-description = "Look up a domain's MX hosts and DMARC policy from public DNS."
+description = "Look up a domain's MX hosts and DMARC policy from public DNS, with an optional SMTP banner probe."
 readme = "README-PYPI.md"
 license = { file = "LICENCE" }
 requires-python = ">=3.10"
@@ -14,7 +14,7 @@ authors = [
   { name = "The Lupaxa Project" }
 ]
 
-keywords = ["dmarc", "dns", "email-security", "mx", "cli"]
+keywords = ["dmarc", "dns", "email-security", "mx", "smtp", "cli"]
 
 dependencies = [
   "dnspython>=2.6",
