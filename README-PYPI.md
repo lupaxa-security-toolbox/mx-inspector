@@ -27,7 +27,7 @@ optional SMTP banner probe.
 - Decode common DMARC tags (`p`, `sp`, `rua`, `ruf`, alignment, and more)
 - Optional `--probe` SMTP banner / EHLO fingerprint (no authentication, no mail)
 - Human-readable table output, or JSON
-- Library API (`lookup_dmarc` / `lookup_mx` / `probe_smtp`) and CLI (`mx-inspector`)
+- Library API (`lookup_dmarc` / `lookup_mx` / `lookup_spf` / `score_posture` / `probe_smtp`) and CLI (`mx-inspector`)
 - Fully typed, linted, formatted, and tested
 
 ## Installation
@@ -44,7 +44,8 @@ pip install lupaxa-mx-inspector
 pip install -e ".[dev]"
 ```
 
-Requires Python 3.10+. Runtime dependencies: `dnspython`, `prettytable`.
+Requires Python 3.10+. Runtime dependencies: `dnspython`, `prettytable`,
+`colored`.
 
 ## Library quick start
 

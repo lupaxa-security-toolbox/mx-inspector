@@ -13,3 +13,7 @@ class DmarcLookupError(MxInspectorError):
 
 class MxLookupError(MxInspectorError):
     """An MX DNS lookup failed."""
+
+
+class SpfLookupError(MxInspectorError):
+    """An SPF DNS lookup failed."""

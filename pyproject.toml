@@ -14,9 +14,10 @@ authors = [
   { name = "The Lupaxa Project" }
 ]
 
-keywords = ["dmarc", "dns", "email-security", "mx", "smtp", "cli"]
+keywords = ["dmarc", "dns", "email-security", "mx", "spf", "smtp", "cli"]
 
 dependencies = [
+  "colored>=2.2",
   "dnspython>=2.6",
   "prettytable>=3.10",
 ]

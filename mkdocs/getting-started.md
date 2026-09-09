@@ -3,7 +3,7 @@
 ## Requirements
 
 - Python 3.10 or newer
-- `dnspython` and `prettytable` (installed with the package)
+- `dnspython`, `prettytable`, and `colored` (installed with the package)
 
 ## Install
 
@@ -15,12 +15,12 @@ mx-inspector --help
 Library import:
 
 ```python
-from lupaxa.mx_inspector import lookup_dmarc, lookup_mx
+from lupaxa.mx_inspector import lookup_dmarc, lookup_mx, lookup_spf, score_posture
 
 policy = lookup_dmarc("example.com")
-print(policy["p"])
-for host in lookup_mx("example.com"):
-    print(host.priority, host.exchange)
+hosts = lookup_mx("example.com")
+spf = lookup_spf("example.com")
+print(score_posture(policy, mx_hosts=hosts, spf_records=spf))
 ```
 
 Module entry point:
@@ -40,7 +40,8 @@ mx-inspector --version
 ## First run
 
 Pass one or more domain names. The tool queries public DNS for MX hosts
-and `_dmarc.<domain>`, then prints a table. MX servers are the first row;
+SPF, and `_dmarc.<domain>`, then prints a table. MX servers are the first
+row; the posture score is a footer at the bottom.
 every known DMARC tag follows (unpublished tags show as `missing`):
 
 ```bash

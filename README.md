@@ -38,13 +38,13 @@ mx-inspector example.com --probe --timeout 10
 python -m lupaxa.mx_inspector --version
 ```
 
-The tool queries MX hosts and `_dmarc.<domain>`, then prints a table of
-decoded tags. `--probe` greets each MX (banner + EHLO only) to
-fingerprint mail software. `--port` sets the SMTP probe port
-(default 25; use `587` for submission). `--timeout` sets the SMTP
-probe timeout (default 5 seconds). `--format json` writes
-`{domain, policy, mx, error, mx_error}` objects, plus `probe` when
-`--probe` is set.
+The tool queries MX hosts, SPF, and `_dmarc.<domain>`, then prints a
+table of decoded tags and a spoofing-posture score. `--probe` greets
+each MX (banner + EHLO only) to fingerprint mail software. `--port`
+sets the SMTP probe port (default 25; use `587` for submission).
+`--timeout` sets the SMTP probe timeout (default 5 seconds).
+`--format json` writes `{domain, policy, mx, spf, score, error,
+mx_error, spf_error}` objects, plus `probe` when `--probe` is set.
 
 ## Library
 

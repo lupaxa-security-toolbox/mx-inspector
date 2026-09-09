@@ -7,9 +7,12 @@ import json
 import sys
 
 from .dmarc import expand_policy, format_dmarc_table, lookup_dmarc
-from .exceptions import DmarcLookupError, MxLookupError
+from .exceptions import DmarcLookupError, MxLookupError, SpfLookupError
 from .mx import MxHost, lookup_mx
 from .probe import DEFAULT_PORT, DEFAULT_TIMEOUT, SmtpProbe, probe_mx_hosts, probe_payload
+from .score import score_payload, score_posture
+from .spf import lookup_spf
+from .style import use_color
 from .version import get_version
 
 
@@ -31,7 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the ``mx-inspector`` argument parser."""
     parser = argparse.ArgumentParser(
         description=(
-            "Look up a domain's MX hosts and DMARC policy from public DNS. "
+            "Look up a domain's MX hosts, SPF, and DMARC policy from public DNS. "
             "Optional --probe greets each MX over SMTP to fingerprint mail software."
         ),
     )
@@ -65,6 +68,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_TIMEOUT,
         metavar="SECONDS",
         help=f"SMTP probe timeout in seconds (default: {DEFAULT_TIMEOUT:g})",
+    )
+    parser.add_argument(
+        "--no-color",
+        action="store_true",
+        help="Disable colour in table output",
     )
     parser.add_argument("--version", action="version", version=get_version())
     return parser
@@ -110,6 +118,22 @@ def main(argv: list[str] | None = None) -> int:
             if args.format != "json":
                 print(mx_error, file=sys.stderr)
 
+        spf_records: list[str] = []
+        spf_error: str | None = None
+        try:
+            spf_records = lookup_spf(domain)
+        except SpfLookupError as exc:
+            failed = True
+            spf_error = str(exc)
+            if args.format != "json":
+                print(spf_error, file=sys.stderr)
+
+        posture = score_posture(
+            policy or {},
+            mx_hosts=mx_hosts,
+            spf_records=spf_records,
+        )
+
         probes: list[SmtpProbe] | None = None
         if args.probe:
             probes = probe_mx_hosts(
@@ -125,6 +149,9 @@ def main(argv: list[str] | None = None) -> int:
                 "mx_error": mx_error,
                 "policy": expand_policy(policy) if policy is not None else None,
                 "mx": _mx_payload(mx_hosts),
+                "spf": spf_records,
+                "spf_error": spf_error,
+                "score": score_payload(posture),
             }
             if probes is not None:
                 row["probe"] = probe_payload(probes)
@@ -136,6 +163,9 @@ def main(argv: list[str] | None = None) -> int:
                     policy or {},
                     mx_hosts=mx_hosts,
                     smtp_probes=probes,
+                    spf_records=spf_records,
+                    posture=posture,
+                    color=not args.no_color and use_color(sys.stdout),
                 )
             )
 

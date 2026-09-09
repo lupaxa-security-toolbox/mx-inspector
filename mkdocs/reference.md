@@ -36,6 +36,30 @@ priority then host name. The table lists them first as
 MX (RFC 7505, exchange `.`), the table says `missing` and JSON uses an
 empty `mx` list. A priority is shown only when there is a host name.
 
+## SPF
+
+`lookup_spf` returns apex `TXT` payloads that start with `v=spf1`. No
+SPF record is an empty list. The table shows the record after the MX
+rows, or `missing`. JSON uses `spf` (list) and `spf_error`.
+
+## Posture score
+
+`score_posture` returns a 0–100 spoofing-posture score for this exact
+domain name, plus a grade and reasons. `--probe` is not used. The table
+prints the score and notes as a footer under a horizontal rule.
+
+| Score    | Grade         |
+| :------- | :------------ |
+| `0–24`   | `open`        |
+| `25–49`  | `monitoring`  |
+| `50–74`  | `enforcing`   |
+| `75–100` | `locked down` |
+
+Main inputs: DMARC `p` (scaled by `pct`), `sp` / `np`, `rua`, alignment
+tags, and the SPF `all` qualifier. Strict SPF alignment is only counted
+when an SPF record exists. DKIM selectors are not queried. This is not
+a phishing-safety rating.
+
 ## SMTP probe
 
 `--probe` / `probe_smtp` / `probe_mx_hosts` greet each MX over cleartext
@@ -59,14 +83,17 @@ report still prints and the process exit code is unchanged.
 
 ## JSON result fields
 
-| Field      | Type           | Meaning                                         |
-| :--------- | :------------- | :---------------------------------------------- |
-| `domain`   | `str`          | Domain that was requested                       |
-| `policy`   | `dict or null` | Known tags (`null` if unpublished), plus extras |
-| `mx`       | `list`         | `{priority, exchange}` objects, maybe empty     |
-| `error`    | `str or null`  | DMARC failure message, or `null`                |
-| `mx_error` | `str or null`  | MX failure message, or `null`                   |
-| `probe`    | `list`         | Present only when `--probe` is set              |
+| Field       | Type           | Meaning                                         |
+| :---------- | :------------- | :---------------------------------------------- |
+| `domain`    | `str`          | Domain that was requested                       |
+| `policy`    | `dict or null` | Known tags (`null` if unpublished), plus extras |
+| `mx`        | `list`         | `{priority, exchange}` objects, maybe empty     |
+| `spf`       | `list`         | `v=spf1` TXT payloads, maybe empty              |
+| `score`     | `dict`         | `{value, grade, reasons}`                       |
+| `error`     | `str or null`  | DMARC failure message, or `null`                |
+| `mx_error`  | `str or null`  | MX failure message, or `null`                   |
+| `spf_error` | `str or null`  | SPF failure message, or `null`                  |
+| `probe`     | `list`         | Present only when `--probe` is set              |
 
 Each `probe` item:
 
@@ -81,20 +108,21 @@ Each `probe` item:
 
 ## Errors
 
-| Case                         | Library                              | CLI                                 |
-| :--------------------------- | :----------------------------------- | :---------------------------------- |
-| Empty domain                 | `DmarcLookupError` / `MxLookupError` | Exit 2; stderr or JSON error fields |
-| NXDOMAIN / timeout / no NS   | `DmarcLookupError` / `MxLookupError` | Exit 2; stderr or JSON error fields |
-| TXT present but not DMARC    | `DmarcLookupError`                   | Exit 2; stderr or JSON `error`      |
-| No MX records                | Empty list                           | Table `missing`; JSON `mx: []`      |
-| One of several domains fails | Raised per call                      | Other domains still print; exit 2   |
-| SMTP probe connect / timeout | `SmtpProbe.error` set                | Host row records it; exit unchanged |
-| `--port` outside `1`–`65535` | —                                    | Exit 2 (argparse)                   |
-| `--timeout` `<= 0`           | —                                    | Exit 2 (argparse)                   |
+| Case                         | Library                                                 | CLI                                 |
+| :--------------------------- | :------------------------------------------------------ | :---------------------------------- |
+| Empty domain                 | `DmarcLookupError` / `MxLookupError` / `SpfLookupError` | Exit 2; stderr or JSON error fields |
+| NXDOMAIN / timeout / no NS   | `DmarcLookupError` / `MxLookupError` / `SpfLookupError` | Exit 2; stderr or JSON error fields |
+| TXT present but not DMARC    | `DmarcLookupError`                                      | Exit 2; stderr or JSON `error`      |
+| No MX records                | Empty list                                              | Table `missing`; JSON `mx: []`      |
+| No SPF record                | Empty list                                              | Table `missing`; JSON `spf: []`     |
+| One of several domains fails | Raised per call                                         | Other domains still print; exit 2   |
+| SMTP probe connect / timeout | `SmtpProbe.error` set                                   | Host row records it; exit unchanged |
+| `--port` outside `1`–`65535` | —                                                       | Exit 2 (argparse)                   |
+| `--timeout` `<= 0`           | —                                                       | Exit 2 (argparse)                   |
 
 ## Exit codes
 
 | Code | When                                               |
 | :--- | :------------------------------------------------- |
 | `0`  | Lookups succeeded (probe host errors do not count) |
-| `2`  | Bad flags, or any DMARC / MX lookup failed         |
+| `2`  | Bad flags, or any DMARC / MX / SPF lookup failed   |

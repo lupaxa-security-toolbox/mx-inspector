@@ -1,8 +1,8 @@
 # Usage
 
 Input is one or more domain names. Each name is looked up independently.
-MX and DMARC lookups are independent: one can fail without dropping the
-other.
+MX, SPF, and DMARC lookups are independent: one can fail without dropping
+the others.
 
 ## CLI flags
 
@@ -12,12 +12,14 @@ other.
 | `--probe`        | off     | Greet each MX (banner + EHLO)                 |
 | `--port`         | `25`    | SMTP probe TCP port (e.g. `587` submission)   |
 | `--timeout`      | `5`     | SMTP probe timeout in seconds (must be `> 0`) |
+| `--no-color`     | off     | Disable colour in table output                |
 | `--version`      | —       | Print the package version and exit            |
 
 ```bash
 mx-inspector example.com
 mx-inspector example.com example.org
 mx-inspector example.com --format json
+mx-inspector example.com --no-color
 mx-inspector example.com --probe
 mx-inspector example.com --probe --port 587
 mx-inspector example.com --probe --timeout 10
@@ -26,18 +28,27 @@ mx-inspector example.com --probe --port 587 --timeout 10
 
 Table output is a PrettyTable titled with the domain. MX hosts come first
 as `hostname (Priority: N)` rows, or `missing` when none are published
-(including a null MX). Every known DMARC field is listed; unpublished
-tags are shown as `missing`. Comma-separated values such as report addresses are split onto
-their own rows. `--probe` appends mail software, SMTP banner, and EHLO
-capabilities per host.
+(including a null MX). The SPF record (or `missing`) and every known
+DMARC field follow. A posture score (0–100) and notes sit in a footer
+below a drawn line. On a colour terminal, the title is cyan `Results
+for:` plus a bold white domain, names are cyan, values are green,
+`missing` is grey, and the posture score is red / orange / yellow /
+green by grade. Pass `--no-color` or set `NO_COLOR` to disable.
+Unpublished tags are shown as `missing`. Comma-separated values such as
+report addresses are split onto their own rows. `--probe` appends mail
+software, SMTP banner, and EHLO capabilities per host.
 
-JSON is a list of objects with `domain`, `policy`, `mx`, `error`, and
-`mx_error`. `--probe` adds a `probe` list. Known tags that were not
-published are `null` on `policy`.
+The posture score is DNS-only spoofing posture for this exact domain
+name (`open`, `monitoring`, `enforcing`, or `locked down`). It is not a
+phishing-safety rating.
 
-A failed DMARC or MX lookup prints the error on stderr for table mode, or
-sets `error` / `mx_error` on that result in JSON mode. The process exits
-non-zero if any lookup failed.
+JSON is a list of objects with `domain`, `policy`, `mx`, `spf`,
+`score`, `error`, `mx_error`, and `spf_error`. `--probe` adds a `probe`
+list. Known tags that were not published are `null` on `policy`.
+
+A failed DMARC, MX, or SPF lookup prints the error on stderr for table
+mode, or sets `error` / `mx_error` / `spf_error` on that result in JSON
+mode. The process exits non-zero if any lookup failed.
 
 ## Probe
 
@@ -59,13 +70,13 @@ not abort the rest of the report.
 ## Library
 
 ```python
-from lupaxa.mx_inspector import lookup_dmarc, lookup_mx, parse_dmarc_record
+from lupaxa.mx_inspector import lookup_dmarc, lookup_mx, lookup_spf, score_posture
 
 policy = lookup_dmarc("example.com")
-print(policy["p"], policy.get("rua"))
-
-for host in lookup_mx("example.com"):
-    print(host.priority, host.exchange)
+hosts = lookup_mx("example.com")
+spf = lookup_spf("example.com")
+score = score_posture(policy, mx_hosts=hosts, spf_records=spf)
+print(score.value, score.grade, score.reasons)
 
 tags = parse_dmarc_record("v=DMARC1; p=none; rua=mailto:dmarc@example.com")
 ```
@@ -84,6 +95,8 @@ for item in probe_mx_hosts(hosts, port=DEFAULT_PORT, timeout=DEFAULT_TIMEOUT):
 | :-------------------- | :------------------------------------------------- |
 | `lookup_dmarc`        | Query `_dmarc.<domain>` and return parsed tags     |
 | `lookup_mx`           | Query `MX` records; empty list if none published   |
+| `lookup_spf`          | Query apex `TXT` for `v=spf1` records              |
+| `score_posture`       | 0–100 spoofing posture from DMARC, SPF, and MX     |
 | `parse_dmarc_record`  | Parse a DMARC TXT payload without talking to DNS   |
 | `format_dmarc_table`  | Render the human-readable table as a string        |
 | `expand_policy`       | Fill known tags with `None` where they are absent  |
@@ -94,6 +107,6 @@ for item in probe_mx_hosts(hosts, port=DEFAULT_PORT, timeout=DEFAULT_TIMEOUT):
 
 `lookup_dmarc` and `parse_dmarc_record` raise `DmarcLookupError` when the
 lookup fails or the payload is not a DMARC record. `lookup_mx` raises
-`MxLookupError` on DNS failure. No MX records is an empty list, not an
-error. Probe helpers return an `SmtpProbe` with `error` set on connect
+`MxLookupError` on DNS failure. `lookup_spf` raises `SpfLookupError` on
+DNS failure. No MX or SPF records is an empty list, not an error. Probe helpers return an `SmtpProbe` with `error` set on connect
 failure; they do not raise for a refused or timed-out SMTP session.

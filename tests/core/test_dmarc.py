@@ -138,6 +138,55 @@ def test_format_dmarc_table_lists_mx_servers() -> None:
     assert table.index("MX servers") < table.index("DMARC policy")
 
 
+def test_format_dmarc_table_lists_spf_and_posture() -> None:
+    from lupaxa.mx_inspector.score import score_posture
+
+    posture = score_posture(
+        {"p": "reject"},
+        mx_hosts=[MxHost(priority=10, exchange="mail.example.com")],
+        spf_records=["v=spf1 -all"],
+    )
+    table = format_dmarc_table(
+        "example.com",
+        {"p": "reject"},
+        mx_hosts=[MxHost(priority=10, exchange="mail.example.com")],
+        spf_records=["v=spf1 -all"],
+        posture=posture,
+    )
+    assert "MX servers" in table
+    assert table.index("MX servers") < table.index("SPF")
+    assert table.index("SPF") < table.index("DMARC policy")
+    assert table.index("DMARC policy") < table.index("Posture score")
+    assert f"{posture.value} ({posture.grade})" in table
+    assert "v=spf1 -all" in table
+    assert "Posture notes" in table
+    lines = table.splitlines()
+    score_line = next(index for index, line in enumerate(lines) if "Posture score" in line)
+    assert lines[score_line - 1].startswith("+")
+    assert "-" in lines[score_line - 1]
+
+
+def test_format_dmarc_table_colors_names_values_and_score() -> None:
+    from colored import Fore, Style
+
+    from lupaxa.mx_inspector.score import PostureScore
+
+    table = format_dmarc_table(
+        "example.com",
+        {"p": "none"},
+        mx_hosts=[],
+        posture=PostureScore(value=12, grade="open", reasons=("No SPF record",)),
+        color=True,
+    )
+    assert f"{Fore.cyan}Results for:{Style.reset}" in table
+    assert f"{Style.bold}{Fore.white}example.com{Style.reset}" in table
+    assert f"{Fore.cyan}MX servers{Style.reset}" in table
+    assert f"{Fore.dark_gray}missing{Style.reset}" in table
+    assert f"{Fore.green}none" in table or "none (monitor" in table
+    assert f"{Fore.red}12 (open){Style.reset}" in table
+    assert f"{Fore.green}No SPF record{Style.reset}" in table
+
+
 def test_format_dmarc_table_splits_comma_separated_addresses() -> None:
     table = format_dmarc_table(
         "example.com",

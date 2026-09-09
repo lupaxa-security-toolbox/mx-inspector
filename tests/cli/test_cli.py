@@ -14,6 +14,26 @@ def test_help_exits_zero() -> None:
     assert main(["--help"]) == 0
 
 
+def test_help_includes_no_color(capsys) -> None:  # type: ignore[no-untyped-def]
+    assert main(["--help"]) == 0
+    assert "--no-color" in capsys.readouterr().out
+
+
+def test_no_color_flag_disables_table_colour(capsys, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.setenv("FORCE_COLOR", "1")
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    with (
+        patch("lupaxa.mx_inspector.cli.lookup_dmarc", return_value={"p": "none"}),
+        patch("lupaxa.mx_inspector.cli.lookup_mx", return_value=[]),
+        patch("lupaxa.mx_inspector.cli.lookup_spf", return_value=[]),
+    ):
+        code = main(["example.com", "--no-color"])
+    assert code == 0
+    out = capsys.readouterr().out
+    assert "\033[" not in out
+    assert "Results for: example.com" in out
+
+
 def test_version_flag(capsys) -> None:  # type: ignore[no-untyped-def]
     assert main(["--version"]) == 0
     assert get_version() in capsys.readouterr().out
@@ -23,6 +43,7 @@ def test_table_output(capsys) -> None:  # type: ignore[no-untyped-def]
     with (
         patch("lupaxa.mx_inspector.cli.lookup_dmarc", return_value={"p": "none"}),
         patch("lupaxa.mx_inspector.cli.lookup_mx", return_value=[]),
+        patch("lupaxa.mx_inspector.cli.lookup_spf", return_value=[]),
     ):
         code = main(["example.com"])
     assert code == 0
@@ -42,6 +63,7 @@ def test_json_format(capsys) -> None:  # type: ignore[no-untyped-def]
             "lupaxa.mx_inspector.cli.lookup_mx",
             return_value=[MxHost(priority=10, exchange="mail.example.com")],
         ),
+        patch("lupaxa.mx_inspector.cli.lookup_spf", return_value=["v=spf1 -all"]),
     ):
         code = main(["example.com", "--format", "json"])
     assert code == 0
@@ -50,6 +72,15 @@ def test_json_format(capsys) -> None:  # type: ignore[no-untyped-def]
     assert payload[0]["policy"]["p"] == "reject"
     assert payload[0]["policy"]["sp"] is None
     assert payload[0]["mx"] == [{"priority": 10, "exchange": "mail.example.com"}]
+    assert payload[0]["spf"] == ["v=spf1 -all"]
+    assert payload[0]["spf_error"] is None
+    assert payload[0]["score"]["grade"] in {
+        "open",
+        "monitoring",
+        "enforcing",
+        "locked down",
+    }
+    assert payload[0]["score"]["value"] >= 0
     assert payload[0]["error"] is None
     assert payload[0]["mx_error"] is None
 
@@ -70,6 +101,7 @@ def test_probe_flag_includes_fingerprint(capsys) -> None:  # type: ignore[no-unt
     with (
         patch("lupaxa.mx_inspector.cli.lookup_dmarc", return_value={"p": "none"}),
         patch("lupaxa.mx_inspector.cli.lookup_mx", return_value=[host]),
+        patch("lupaxa.mx_inspector.cli.lookup_spf", return_value=[]),
         patch("lupaxa.mx_inspector.cli.probe_mx_hosts", return_value=[probe]) as mocked,
     ):
         code = main(["example.com", "--probe", "--format", "json"])
@@ -88,6 +120,7 @@ def test_timeout_flag_is_passed_to_probe() -> None:
     with (
         patch("lupaxa.mx_inspector.cli.lookup_dmarc", return_value={"p": "none"}),
         patch("lupaxa.mx_inspector.cli.lookup_mx", return_value=[host]),
+        patch("lupaxa.mx_inspector.cli.lookup_spf", return_value=[]),
         patch("lupaxa.mx_inspector.cli.probe_mx_hosts", return_value=[]) as mocked,
     ):
         code = main(["example.com", "--probe", "--timeout", "2.5"])
@@ -107,6 +140,7 @@ def test_port_flag_is_passed_to_probe() -> None:
     with (
         patch("lupaxa.mx_inspector.cli.lookup_dmarc", return_value={"p": "none"}),
         patch("lupaxa.mx_inspector.cli.lookup_mx", return_value=[host]),
+        patch("lupaxa.mx_inspector.cli.lookup_spf", return_value=[]),
         patch("lupaxa.mx_inspector.cli.probe_mx_hosts", return_value=[]) as mocked,
     ):
         code = main(["example.com", "--probe", "--port", "587"])
@@ -127,6 +161,7 @@ def test_lookup_error_is_nonzero(capsys) -> None:  # type: ignore[no-untyped-def
             side_effect=DmarcLookupError("No DMARC TXT record found for _dmarc.example.com"),
         ),
         patch("lupaxa.mx_inspector.cli.lookup_mx", return_value=[]),
+        patch("lupaxa.mx_inspector.cli.lookup_spf", return_value=[]),
     ):
         code = main(["example.com"])
     assert code == 2

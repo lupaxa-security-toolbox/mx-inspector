@@ -12,6 +12,8 @@ from prettytable import PrettyTable
 from .exceptions import DmarcLookupError
 from .mx import MxHost
 from .probe import SmtpProbe
+from .score import PostureScore
+from .style import color_name, color_score, color_title, color_value
 
 _FIELD_LABELS = (
     ("v", "DMARC version", None),
@@ -202,9 +204,28 @@ def _row_values(key: str, raw: str | None, suffix: str | None) -> list[str]:
     return [_row_value(key, raw, suffix)]
 
 
-def _add_named_rows(table: PrettyTable, label: str, values: Sequence[str]) -> None:
+def _add_named_rows(
+    table: PrettyTable,
+    label: str,
+    values: Sequence[str],
+    *,
+    color: bool = False,
+) -> None:
     for index, value in enumerate(values):
-        table.add_row([label if index == 0 else "", value])
+        name = label if index == 0 else ""
+        table.add_row([_style_name(name, color), _style_value(value, color)])
+
+
+def _style_name(text: str, color: bool) -> str:
+    return color_name(text) if color else text
+
+
+def _style_value(text: str, color: bool, *, grade: str | None = None) -> str:
+    if not color:
+        return text
+    if grade is not None:
+        return color_score(text, grade)
+    return color_value(text)
 
 
 def format_dmarc_table(
@@ -212,49 +233,97 @@ def format_dmarc_table(
     dmarc_policy: dict[str, str],
     mx_hosts: Sequence[MxHost] | None = None,
     smtp_probes: Sequence[SmtpProbe] | None = None,
+    spf_records: Sequence[str] | None = None,
+    posture: PostureScore | None = None,
+    color: bool = False,
 ) -> str:
     """Render a human-readable table for a decoded DMARC policy.
 
     Every known field is listed. Tags the domain did not publish are shown
     as ``missing`` rather than omitted. MX hosts are listed first, or as
-    ``missing`` when none were published.
+    ``missing`` when none were published. Posture score and notes are a
+    footer below a divider, after SPF, DMARC, and any probe rows.
     """
     table = PrettyTable()
-    table.field_names = ["Name", "Value"]
-    table.title = f"Results for: {domain}"
+    table.field_names = [
+        _style_name("Name", color),
+        _style_value("Value", color),
+    ]
+    table.title = color_title(domain) if color else f"Results for: {domain}"
 
     usable = [host for host in (mx_hosts or ()) if host.exchange]
     if usable:
         mx_values = [f"{host.exchange} (Priority: {host.priority})" for host in usable]
-        _add_named_rows(table, "MX servers", mx_values)
+        _add_named_rows(table, "MX servers", mx_values, color=color)
     else:
-        table.add_row(["MX servers", _MISSING])
+        table.add_row([_style_name("MX servers", color), _style_value(_MISSING, color)])
+
+    if spf_records is not None:
+        if spf_records:
+            _add_named_rows(table, "SPF", list(spf_records), color=color)
+        else:
+            table.add_row([_style_name("SPF", color), _style_value(_MISSING, color)])
 
     seen: set[str] = set()
     for key, label, suffix in _FIELD_LABELS:
         seen.add(key)
         raw = dmarc_policy.get(key) if key in dmarc_policy else None
-        _add_named_rows(table, label, _row_values(key, raw, suffix))
+        _add_named_rows(table, label, _row_values(key, raw, suffix), color=color)
 
     for key, value in dmarc_policy.items():
         if key not in seen:
-            _add_named_rows(table, key, _row_values(key, value, None))
+            _add_named_rows(table, key, _row_values(key, value, None), color=color)
 
     if smtp_probes is not None:
         if smtp_probes:
             for item in smtp_probes:
                 host_label = item.host or "MX"
                 table.add_row(
-                    [f"Mail software ({host_label})", item.software or _MISSING],
+                    [
+                        _style_name(f"Mail software ({host_label})", color),
+                        _style_value(item.software or _MISSING, color),
+                    ],
                 )
                 table.add_row(
-                    [f"SMTP banner ({host_label})", item.banner or item.error or _MISSING],
+                    [
+                        _style_name(f"SMTP banner ({host_label})", color),
+                        _style_value(item.banner or item.error or _MISSING, color),
+                    ],
                 )
                 caps = list(item.capabilities) if item.capabilities else [_MISSING]
-                _add_named_rows(table, f"SMTP capabilities ({host_label})", caps)
+                _add_named_rows(
+                    table,
+                    f"SMTP capabilities ({host_label})",
+                    caps,
+                    color=color,
+                )
         else:
-            table.add_row(["Mail software", _MISSING])
-            table.add_row(["SMTP banner", _MISSING])
-            table.add_row(["SMTP capabilities", _MISSING])
+            table.add_row(
+                [_style_name("Mail software", color), _style_value(_MISSING, color)],
+            )
+            table.add_row(
+                [_style_name("SMTP banner", color), _style_value(_MISSING, color)],
+            )
+            table.add_row(
+                [
+                    _style_name("SMTP capabilities", color),
+                    _style_value(_MISSING, color),
+                ],
+            )
+
+    if posture is not None:
+        table.add_divider()
+        table.add_row(
+            [
+                _style_name("Posture score", color),
+                _style_value(
+                    f"{posture.value} ({posture.grade})",
+                    color,
+                    grade=posture.grade,
+                ),
+            ],
+        )
+        if posture.reasons:
+            _add_named_rows(table, "Posture notes", list(posture.reasons), color=color)
 
     return str(table)

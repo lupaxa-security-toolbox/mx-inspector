@@ -21,7 +21,9 @@ You can also run `python -m lupaxa.mx_inspector`.
 ## What it does
 
 - Queries `MX` records for the domain (priority and host)
+- Queries apex `TXT` for SPF (`v=spf1`)
 - Queries `_dmarc.<domain>` for a TXT record
+- Scores spoofing posture (`open` / `monitoring` / `enforcing` / `locked down`)
 - Lists MX servers first in the table, then every known DMARC tag
 - Unpublished tags stay in the table as `missing` (JSON uses `null`)
 - Optionally greets each MX (`--probe`: banner + EHLO only)

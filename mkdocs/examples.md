@@ -44,7 +44,17 @@ unpublished tags are `null`:
     },
     "mx": [
       {"priority": 10, "exchange": "mail.example.com"}
-    ]
+    ],
+    "spf": ["v=spf1 -all"],
+    "spf_error": null,
+    "score": {
+      "value": 86,
+      "grade": "locked down",
+      "reasons": [
+        "DMARC p=reject",
+        "SPF ends with -all"
+      ]
+    }
   }
 ]
 ```
