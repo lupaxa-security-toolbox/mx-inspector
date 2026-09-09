@@ -39,6 +39,26 @@ def test_probe_smtp_reads_banner_and_ehlo() -> None:
     sock.close.assert_called()
 
 
+def test_probe_smtp_quit_failure_keeps_result(caplog) -> None:  # type: ignore[no-untyped-def]
+    import logging
+
+    sock = MagicMock()
+    sock.recv.side_effect = [
+        b"220 mail.example.com ESMTP Postfix\r\n",
+        b"250-mail.example.com\r\n250 STARTTLS\r\n",
+    ]
+    sock.sendall.side_effect = [None, OSError("broken pipe")]
+    with (
+        patch("lupaxa.mx_inspector.probe.socket.create_connection", return_value=sock),
+        caplog.at_level(logging.DEBUG, logger="lupaxa.mx_inspector.probe"),
+    ):
+        result = probe_smtp("mail.example.com", timeout=1)
+    assert result.software == "Postfix"
+    assert result.error is None
+    assert "QUIT" in caplog.text
+    assert "broken pipe" in caplog.text
+
+
 def test_probe_smtp_records_connect_error() -> None:
     with patch(
         "lupaxa.mx_inspector.probe.socket.create_connection",

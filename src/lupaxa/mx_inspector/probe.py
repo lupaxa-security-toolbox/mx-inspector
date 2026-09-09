@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import socket
 from collections.abc import Sequence
 from dataclasses import dataclass
 
 from .mx import MxHost
 
+_LOG = logging.getLogger(__name__)
 DEFAULT_PORT = 25
 DEFAULT_TIMEOUT = 5.0
 _EHLO_NAME = "mx-inspector.invalid"
@@ -104,6 +106,15 @@ def _ehlo_capabilities(reply: str) -> tuple[str, ...]:
     return tuple(caps)
 
 
+def _try_quit(sock: socket.socket, host: str) -> None:
+    """Send SMTP QUIT. Do not fail the probe if the peer already hung up."""
+    try:
+        sock.sendall(b"QUIT\r\n")
+        _recv_reply(sock)
+    except OSError as exc:
+        _LOG.debug("SMTP QUIT failed for %s: %s", host, exc)
+
+
 def probe_smtp(
     host: str,
     port: int = DEFAULT_PORT,
@@ -121,11 +132,7 @@ def probe_smtp(
         banner = _recv_reply(sock)
         sock.sendall(f"EHLO {_EHLO_NAME}\r\n".encode("ascii"))
         ehlo = _recv_reply(sock)
-        try:
-            sock.sendall(b"QUIT\r\n")
-            _recv_reply(sock)
-        except OSError:
-            pass
+        _try_quit(sock, host)
         return SmtpProbe(
             host=host,
             port=port,
