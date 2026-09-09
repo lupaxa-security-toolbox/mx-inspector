@@ -39,13 +39,16 @@ mx-inspector --version
 
 ## First run
 
-Pass one or more domain names. The tool queries public DNS for MX hosts
-SPF, and `_dmarc.<domain>`, then prints a table. MX servers are the first
-row; the posture score is a footer at the bottom.
-every known DMARC tag follows (unpublished tags show as `missing`):
+Pass one or more domain names. The tool queries public DNS for MX hosts,
+SPF, and `_dmarc.<domain>`, then prints a table. MX servers are first,
+then SPF, then every known DMARC tag (unpublished tags show as
+`missing`). The posture score is a footer at the bottom. On a colour
+terminal the table is coloured; pass `--no-color` or set `NO_COLOR` for
+plain text:
 
 ```bash
 mx-inspector example.com
+mx-inspector example.com --no-color
 ```
 
 JSON output:

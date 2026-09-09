@@ -5,7 +5,7 @@
 site_name: MX Inspector
 
 site_description: >-
-  Look up a domain's MX hosts and DMARC policy from public DNS,
+  Look up a domain's MX hosts, SPF, and DMARC policy from public DNS,
   with an optional SMTP banner probe.
 
 site_author: The Lupaxa Project

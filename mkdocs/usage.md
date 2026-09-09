@@ -70,7 +70,13 @@ not abort the rest of the report.
 ## Library
 
 ```python
-from lupaxa.mx_inspector import lookup_dmarc, lookup_mx, lookup_spf, score_posture
+from lupaxa.mx_inspector import (
+    lookup_dmarc,
+    lookup_mx,
+    lookup_spf,
+    parse_dmarc_record,
+    score_posture,
+)
 
 policy = lookup_dmarc("example.com")
 hosts = lookup_mx("example.com")
@@ -96,7 +102,9 @@ for item in probe_mx_hosts(hosts, port=DEFAULT_PORT, timeout=DEFAULT_TIMEOUT):
 | `lookup_dmarc`        | Query `_dmarc.<domain>` and return parsed tags     |
 | `lookup_mx`           | Query `MX` records; empty list if none published   |
 | `lookup_spf`          | Query apex `TXT` for `v=spf1` records              |
+| `parse_spf_all`       | Last published SPF `all` qualifier                 |
 | `score_posture`       | 0–100 spoofing posture from DMARC, SPF, and MX     |
+| `grade_for`           | Map a 0–100 score to a posture grade               |
 | `parse_dmarc_record`  | Parse a DMARC TXT payload without talking to DNS   |
 | `format_dmarc_table`  | Render the human-readable table as a string        |
 | `expand_policy`       | Fill known tags with `None` where they are absent  |

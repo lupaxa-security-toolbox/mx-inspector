@@ -1,4 +1,4 @@
-"""lupaxa.mx_inspector — look up MX hosts and a domain's DMARC policy."""
+"""lupaxa.mx_inspector — look up MX hosts, SPF, and a domain's DMARC policy."""
 
 from __future__ import annotations
 

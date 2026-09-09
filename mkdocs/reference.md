@@ -46,7 +46,8 @@ rows, or `missing`. JSON uses `spf` (list) and `spf_error`.
 
 `score_posture` returns a 0–100 spoofing-posture score for this exact
 domain name, plus a grade and reasons. `--probe` is not used. The table
-prints the score and notes as a footer under a horizontal rule.
+prints the score and notes as a footer under a horizontal rule. On a
+colour terminal the score is red / orange / yellow / green by grade.
 
 | Score    | Grade         |
 | :------- | :------------ |
