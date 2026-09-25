@@ -4,20 +4,13 @@
   </a>
 </p>
 
-<h1 align="center">mx-inspector</h1>
+<h1 align="center">MX Inspector</h1>
 
 Look up a domain's MX hosts, SPF, and DMARC policy from public DNS,
 with an optional SMTP banner probe.
 
-> [!WARNING]
-> **Authorised use only.** `--probe` opens an SMTP session to the target
+> **Warning:** **Authorised use only.** `--probe` opens an SMTP session to the target
 > MX hosts. Use it only on systems you are allowed to test.
-
-<p align="center">
-  <a href="https://mx-inspector.thelupaxaproject.org/">Documentation</a>
-  ·
-  <a href="https://github.com/lupaxa-security-toolbox/mx-inspector">GitHub</a>
-</p>
 
 ## Install
 
@@ -68,6 +61,17 @@ print(policy["p"], score.value, score.grade)
 make init
 make python-install-dev
 make python-check
+```
+
+## Documentation
+
+The published guide is at
+<https://mx-inspector.thelupaxaproject.org/>.
+
+Site Markdown lives in `mkdocs/`.
+
+```bash
+python -m pip install -r requirements.txt
 make mkdocs-serve
 ```
 

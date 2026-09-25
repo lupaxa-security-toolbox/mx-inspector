@@ -4,7 +4,7 @@ Input is one or more domain names. Each name is looked up independently.
 MX, SPF, and DMARC lookups are independent: one can fail without dropping
 the others.
 
-## CLI flags
+## CLI Flags
 
 | Flag             | Default | Description                                   |
 | :--------------- | :------ | :-------------------------------------------- |

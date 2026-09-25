@@ -1,6 +1,6 @@
 # Reference
 
-## Policy tags
+## Policy Tags
 
 `lookup_dmarc` returns only the tags the domain published. `rua` and `ruf`
 have `mailto:` prefixes stripped.
@@ -28,7 +28,7 @@ Published coded values are decoded in the table (`r` / `s`, `p`, `fo`).
 
 Unknown extra tags are appended after the known rows.
 
-## MX hosts
+## MX Hosts
 
 `lookup_mx` returns `MxHost` values (`priority`, `exchange`), sorted by
 priority then host name. The table lists them first as
@@ -42,7 +42,7 @@ empty `mx` list. A priority is shown only when there is a host name.
 SPF record is an empty list. The table shows the record after the MX
 rows, or `missing`. JSON uses `spf` (list) and `spf_error`.
 
-## Posture score
+## Posture Score
 
 `score_posture` returns a 0–100 spoofing-posture score for this exact
 domain name, plus a grade and reasons. `--probe` is not used. The table
@@ -61,7 +61,7 @@ tags, and the SPF `all` qualifier. Strict SPF alignment is only counted
 when an SPF record exists. DKIM selectors are not queried. This is not
 a phishing-safety rating.
 
-## SMTP probe
+## SMTP Probe
 
 `--probe` / `probe_smtp` / `probe_mx_hosts` greet each MX over cleartext
 SMTP. Defaults are `DEFAULT_PORT` (`25`) and `DEFAULT_TIMEOUT` (`5.0`
@@ -82,7 +82,7 @@ Table rows after the DMARC fields:
 A refused or timed-out connect is stored on that host. The rest of the
 report still prints and the process exit code is unchanged.
 
-## JSON result fields
+## JSON Result Fields
 
 | Field       | Type           | Meaning                                         |
 | :---------- | :------------- | :---------------------------------------------- |
@@ -121,7 +121,7 @@ Each `probe` item:
 | `--port` outside `1`–`65535` | —                                                       | Exit 2 (argparse)                   |
 | `--timeout` `<= 0`           | —                                                       | Exit 2 (argparse)                   |
 
-## Exit codes
+## Exit Codes
 
 | Code | When                                               |
 | :--- | :------------------------------------------------- |

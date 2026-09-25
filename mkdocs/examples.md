@@ -1,6 +1,6 @@
 # Examples
 
-## Table (default)
+## Table (Default)
 
 ```bash
 mx-inspector example.com
@@ -12,7 +12,7 @@ servers are first, then SPF, then DMARC tags. Unpublished tags stay as
 
 ![Table output from mx-inspector example.com](assets/images/example-com-table.png)
 
-## Several domains
+## Several Domains
 
 ```bash
 mx-inspector example.com example.org
@@ -21,7 +21,7 @@ mx-inspector example.com example.org
 Each domain prints its own table. If one lookup fails, the others still
 print and the process exits non-zero.
 
-## Plain table (no colour)
+## Plain Table (No Colour)
 
 ```bash
 mx-inspector example.com --no-color

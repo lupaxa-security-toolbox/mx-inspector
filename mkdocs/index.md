@@ -19,7 +19,7 @@ mx-inspector example.com
 
 You can also run `python -m lupaxa.mx_inspector`.
 
-## What it does
+## What it Does
 
 - Queries `MX` records for the domain (priority and host)
 - Queries apex `TXT` for SPF (`v=spf1`)
@@ -32,10 +32,3 @@ You can also run `python -m lupaxa.mx_inspector`.
 - `--port` (default 25) and `--timeout` (default 5 seconds) control the probe
 - Prints a human-readable table, or JSON with `--format json`
 - Exposes the same lookups, score, and probe helpers as library functions
-
-## Next steps
-
-- [Getting started](getting-started.md) — install and first run
-- [Usage](usage.md) — CLI flags, probe options, and the library API
-- [Reference](reference.md) — tags, JSON fields, errors, and exit codes
-- [Examples](examples.md) — table, JSON, probe, and library recipes

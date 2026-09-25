@@ -1,4 +1,4 @@
-# Getting started
+# Getting Started
 
 ## Requirements
 
@@ -29,7 +29,7 @@ Module entry point:
 python -m lupaxa.mx_inspector --version
 ```
 
-### From source (development)
+### From Source (Development)
 
 ```bash
 make init
@@ -37,7 +37,7 @@ make python-install-dev
 mx-inspector --version
 ```
 
-## First run
+## First Run
 
 Pass one or more domain names. The tool queries public DNS for MX hosts,
 SPF, and `_dmarc.<domain>`, then prints a table. MX servers are first,
@@ -68,7 +68,7 @@ mx-inspector example.com --probe --timeout 10
 mx-inspector example.com --probe --port 587 --timeout 10
 ```
 
-## Makefile helpers
+## Makefile Helpers
 
 ```bash
 make init                 # clone makefile-skills into .makefiles/
